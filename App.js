@@ -1,99 +1,63 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
-import { Entypo } from "@expo/vector-icons";
-import * as LocalAuthentication from 'expo-local-authentication';
-import React, { useState, useEffect } from 'react';
+import { Text, View, StyleSheet, TextInput, Button } from 'react-native';
+import React from 'react';
+import * as SecureStore from 'expo-secure-store'; 
 
-export default function App() {
-  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+export default function App () {
+  const [key, onChangeKey] = React.useState('');
+  const [value, onChangeValue] = React.useState('');
+  const [result, onChangeResult] = React.useState('(result)');
 
-  const fallBackToDefaultAuth = () => {
-    console.log("Fall back to password authentication");
-  };
+  async function save(key, value) {
+    await SecureStore.setItemAsync(key, value);
+  }
 
-  const alertComponent = (title, mess, btnTxt, btnFunc) => {
-    return Alert.alert(title, mess, [
-      {
-        text: btnTxt,
-        onPress: btnFunc,
-      },
-    ]);
-  };
-
-  const TwoButtonAlert = () =>
-    Alert.alert("You are logged in", "Subscribe now", [
-      {
-        text: "Back",
-        onPress: () => console.log("Cancel Pressed"),
-        style: "cancel",
-      },
-      {
-        text: "PROCEED",
-        onPress: () => console.log("OK Pressed"),
-      },
-    ]);
-
-  const handleBiometricAuth = async () => {
-    const isBiometricAvailable = await LocalAuthentication.hasHardwareAsync();
-
-    if (!isBiometricAvailable) {
-      return alertComponent(
-        'Please enter your password',
-        'Biometric auth not supported',
-        'OK',
-        () => fallBackToDefaultAuth()
-      );
+  async function getValueFor(key){
+    let result = await  SecureStore.getItemAsync(key);
+    if (result) {
+      onChangeResult(result);
+    } else {
+      alert("Invalid key");
     }
-
-    const savedBiometrics = await LocalAuthentication.isEnrolledAsync();
-
-    if (!savedBiometrics) {
-      return alertComponent(
-        'Biometric record not found',
-        'Please login with your password',
-        'OK',
-        () => fallBackToDefaultAuth()
-      );
-    }
-
-    const biometricAuth = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Login with your biometrics",
-      cancelLabel: "Cancel",
-      disableDeviceFallback: true,
-    });
-
-    if (biometricAuth.success) {
-      TwoButtonAlert();
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      const compatible = await LocalAuthentication.hasHardwareAsync();
-      setIsBiometricSupported(compatible);
-    })();
-  }, []);
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome to my app</Text>
-        <Text>
-          {isBiometricSupported
-            ? "Your device is compatible with biometrics"
-            : "Face or fingerprint scanner is available on this device"}
-        </Text>
-      </View>
+    <View style = {StyleSheet.container}>
+      <Text style= {styles.maintext}> Save a Key/Value</Text>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.passwordButton}>
-          <Text style={styles.buttonText}>Login With Password</Text>
-        </TouchableOpacity>
+      <TextInput
+        style = {styles.textInput}
+        placeholder = {'Enter a key'}
+        onChangeText={ text => onChangeKey(text)}
+        value={key}
+        />
 
-        <TouchableOpacity onPress={handleBiometricAuth}>
-          <Entypo name='fingerprint' size={50} color='black' />
-        </TouchableOpacity>
-      </View>
+       <TextInput
+        style = {styles.textInput}
+        placeholder = {'Enter a value'}
+        onChangeText={ text => onChangeValue(text)}
+        value={value}
+        />
+
+        <Button
+        title='Save'
+        onPress={() => {
+          save(key,value)
+          onChangeKey('')
+          onChangeValue('')
+        }}
+        />
+
+        <Text style = {styles.maintext}>Enter Your Key</Text>
+
+        <TextInput
+        style = {styles.textInput}
+        onSubmitEditing={event => {getValueFor(event.nativeEvent.text);}}
+        placeholder='Enter a key'
+        />
+
+        <Text style= {styles.maintext}>{result}</Text>
+
 
       <StatusBar style="auto" />
     </View>
@@ -102,32 +66,25 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  welcomeContainer: {
-    marginBottom: 100,
-    alignItems: 'center',
-  },
-  welcomeText: {
-    textAlign: 'center',
-    fontSize: 18,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10, // Note: gap is not supported in React Native, use margin instead
-  },
-  passwordButton: {
-    borderRadius: 8,
-    backgroundColor: 'black',
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 10,
+    flex: 1,
+    justifyContent: 'center',
+    //alignItems: 'center',
+    backgroundColor: '#fff',
   },
-  buttonText: {
-    color: 'white',
+  maintext: {
+    marginTop: 34,
+    margin:24,
+    fontSize:18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  textInput: {
+    height: 55,
+    borderColor: 'gray',
+    borderWidth: 0.5,
+    padding: 10,
+    margin : 4,
+    borderRadius: 20,
   },
 });
