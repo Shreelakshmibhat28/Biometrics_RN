@@ -67,19 +67,25 @@ export default function App() {
       });
 
       if (biometricAuth.success) {
-        // Check if a fingerprint ID already exists
-        const existingUserId = await SecureStore.getItemAsync('userId');
-        if (existingUserId) {
-          alertComponent('Fingerprint Exists', 'You have already registered this fingerprint.', 'OK', () => {});
-          console.log("Fingerprint already exists. User ID:", existingUserId);
+        // Retrieve the list of fingerprints from SecureStore
+        const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
+
+        // Check if the current fingerprint already exists
+        const existingFingerprint = fingerprints.find(fp => fp.id === biometricAuth.id);
+
+        if (existingFingerprint) {
+          alertComponent('Welcome', 'You are successfully logged in', 'OK', () => {});
+          console.log("Fingerprint already exists. User ID:", existingFingerprint.userId);
         } else {
           // Generate a unique user ID for the new fingerprint
           const uniqueUserId = uuidv4();
-          await SecureStore.setItemAsync('userId', uniqueUserId); // Store it securely
-          
-          // Log the unique user ID to the console
-          console.log("New User ID:", uniqueUserId);
+          const newFingerprint = { id: biometricAuth.id, userId: uniqueUserId };
 
+          // Add the new fingerprint to the list and save it
+          fingerprints.push(newFingerprint);
+          await SecureStore.setItemAsync('fingerprints', JSON.stringify(fingerprints));
+
+          console.log("New Fingerprint Registered. User ID:", uniqueUserId);
           TwoButtonAlert();
         }
       } else {
@@ -93,16 +99,16 @@ export default function App() {
 
   const retrieveUserId = async () => {
     try {
-      const userId = await SecureStore.getItemAsync('userId');
-      if (userId) {
-        alertComponent('Retrieved User ID', `Your User ID is: ${userId}`, 'OK', () => {});
-        console.log("Retrieved User ID:", userId);
+      const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
+      if (fingerprints.length > 0) {
+        alertComponent('Retrieved Fingerprints', `Stored Fingerprints: ${JSON.stringify(fingerprints)}`, 'OK', () => {});
+        console.log("Retrieved Fingerprints:", fingerprints);
       } else {
-        alertComponent('No Data Found', 'No user ID found in secure storage.', 'OK', () => {});
+        alertComponent('No Data Found', 'No fingerprints found in secure storage.', 'OK', () => {});
       }
     } catch (error) {
-      console.error("Error retrieving user ID:", error);
-      alertComponent('Error', 'An error occurred while retrieving user ID', 'OK', () => {});
+      console.error("Error retrieving fingerprints:", error);
+      alertComponent('Error', 'An error occurred while retrieving fingerprints', 'OK', () => {});
     }
   };
 
@@ -134,7 +140,7 @@ export default function App() {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={retrieveUserId}>
-          <Text style={styles.buttonText}>Retrieve User ID</Text>
+          <Text style={styles.buttonText}>Retrieve Fingerprints</Text>
         </TouchableOpacity>
       </View>
 
