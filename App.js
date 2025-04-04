@@ -67,14 +67,21 @@ export default function App() {
       });
 
       if (biometricAuth.success) {
-        // Generate a unique user ID
-        const uniqueUserId = uuidv4();
-        await SecureStore.setItemAsync('userId', uniqueUserId); // Store it securely
-        
-        // Log the unique user ID to the console
-        console.log(" User ID:", uniqueUserId);
+        // Check if a fingerprint ID already exists
+        const existingUserId = await SecureStore.getItemAsync('userId');
+        if (existingUserId) {
+          alertComponent('Fingerprint Exists', 'You have already registered this fingerprint.', 'OK', () => {});
+          console.log("Fingerprint already exists. User ID:", existingUserId);
+        } else {
+          // Generate a unique user ID for the new fingerprint
+          const uniqueUserId = uuidv4();
+          await SecureStore.setItemAsync('userId', uniqueUserId); // Store it securely
+          
+          // Log the unique user ID to the console
+          console.log("New User ID:", uniqueUserId);
 
-        TwoButtonAlert();
+          TwoButtonAlert();
+        }
       } else {
         alertComponent('Authentication Failed', 'Please try again', 'OK', () => {});
       }
