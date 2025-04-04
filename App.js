@@ -1,63 +1,117 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, StyleSheet, TextInput, Button } from 'react-native';
-import React from 'react';
-import * as SecureStore from 'expo-secure-store'; 
+import { Text, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
+import { Entypo } from "@expo/vector-icons";
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore
+import React, { useState, useEffect } from 'react';
 
-export default function App () {
-  const [key, onChangeKey] = React.useState('');
-  const [value, onChangeValue] = React.useState('');
-  const [result, onChangeResult] = React.useState('(result)');
+export default function App() {
+  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
 
-  async function save(key, value) {
-    await SecureStore.setItemAsync(key, value);
-  }
+  const fallBackToDefaultAuth = () => {
+    console.log("Fall back to password authentication");
+  };
 
-  async function getValueFor(key){
-    let result = await  SecureStore.getItemAsync(key);
-    if (result) {
-      onChangeResult(result);
-    } else {
-      alert("Invalid key");
+  const alertComponent = (title, mess, btnTxt, btnFunc) => {
+    return Alert.alert(title, mess, [
+      {
+        text: btnTxt,
+        onPress: btnFunc,
+      },
+    ]);
+  };
+
+  const TwoButtonAlert = () =>
+    Alert.alert("You are logged in", "Subscribe now", [
+      {
+        text: "Back",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      {
+        text: "PROCEED",
+        onPress: () => console.log("OK Pressed"),
+      },
+    ]);
+
+  const handleBiometricAuth = async () => {
+    const isBiometricAvailable = await LocalAuthentication.hasHardwareAsync();
+
+    if (!isBiometricAvailable) {
+      return alertComponent(
+        'Please enter your password',
+        'Biometric auth not supported',
+        'OK',
+        () => fallBackToDefaultAuth()
+      );
     }
-  }
+
+    const savedBiometrics = await LocalAuthentication.isEnrolledAsync();
+
+    if (!savedBiometrics) {
+      return alertComponent(
+        'Biometric record not found',
+        'Please login with your password',
+        'OK',
+        () => fallBackToDefaultAuth()
+      );
+    }
+
+    const biometricAuth = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Login with your biometrics",
+      cancelLabel: "Cancel",
+      disableDeviceFallback: true,
+    });
+
+    if (biometricAuth.success) {
+      // Store user data securely after successful authentication
+      await SecureStore.setItemAsync('userToken', 'your_secure_token_here'); // Replace with actual token or user data
+      TwoButtonAlert();
+    } else {
+      alertComponent('Authentication Failed', 'Please try again', 'OK', () => {});
+    }
+  };
+
+  const retrieveUserData = async () => {
+    const userData = await SecureStore.getItemAsync('userToken');
+    if (userData) {
+      alertComponent('Retrieved Data', `Your token is: ${userData}`, 'OK', () => {});
+    } else {
+      alertComponent('No Data Found', 'No user data found in secure storage.', 'OK', () => {});
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      setIsBiometricSupported(compatible);
+    })();
+  }, []);
 
   return (
-    <View style = {StyleSheet.container}>
-      <Text style= {styles.maintext}> Save a Key/Value</Text>
+    <View style={styles.container}>
+      <View style={styles.welcomeContainer}>
+        <Text style={styles.welcomeText}>Welcome to my app</Text>
+        <Text>
+          {isBiometricSupported
+            ? "Your device is compatible with biometrics"
+            : "Face or fingerprint scanner is available on this device"}
+        </Text>
+      </View>
 
-      <TextInput
-        style = {styles.textInput}
-        placeholder = {'Enter a key'}
-        onChangeText={ text => onChangeKey(text)}
-        value={key}
-        />
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.passwordButton}>
+          <Text style={styles.buttonText}>Login With Password</Text>
+        </TouchableOpacity>
 
-       <TextInput
-        style = {styles.textInput}
-        placeholder = {'Enter a value'}
-        onChangeText={ text => onChangeValue(text)}
-        value={value}
-        />
+        <TouchableOpacity onPress={handleBiometricAuth}>
+          <Entypo name='fingerprint' size={50} color='black' />
+        </TouchableOpacity>
 
-        <Button
-        title='Save'
-        onPress={() => {
-          save(key,value)
-          onChangeKey('')
-          onChangeValue('')
-        }}
-        />
-
-        <Text style = {styles.maintext}>Enter Your Key</Text>
-
-        <TextInput
-        style = {styles.textInput}
-        onSubmitEditing={event => {getValueFor(event.nativeEvent.text);}}
-        placeholder='Enter a key'
-        />
-
-        <Text style= {styles.maintext}>{result}</Text>
-
+        <TouchableOpacity onPress={retrieveUserData}>
+          <Text style={styles.buttonText}>Retrieve User Data</Text>
+        </TouchableOpacity>
+      </View>
 
       <StatusBar style="auto" />
     </View>
@@ -66,25 +120,33 @@ export default function App () {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
     flex: 1,
+    backgroundColor: 'white',
+    alignItems: 'center',
     justifyContent: 'center',
-    //alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  maintext: {
-    marginTop: 34,
-    margin:24,
-    fontSize:18,
-    fontWeight: 'bold',
+  welcomeContainer: {
+    marginBottom: 100,
+    alignItems: 'center',
+  },
+  welcomeText: {
     textAlign: 'center',
+    fontSize: 18,
   },
-  textInput: {
-    height: 55,
-    borderColor: 'gray',
-    borderWidth: 0.5,
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  passwordButton: {
+    borderRadius: 8,
+    backgroundColor: 'black',
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 10,
-    margin : 4,
-    borderRadius: 20,
+    marginRight: 10,
+  },
+  buttonText: {
+    color: 'white',
   },
 });
