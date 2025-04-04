@@ -10,10 +10,6 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
 
-  const fallBackToDefaultAuth = () => {
-    console.log("Fall back to password authentication");
-  };
-
   const alertComponent = (title, mess, btnTxt, btnFunc) => {
     return Alert.alert(title, mess, [
       {
@@ -42,10 +38,10 @@ export default function App() {
 
       if (!isBiometricAvailable) {
         return alertComponent(
-          'Please enter your password',
           'Biometric auth not supported',
+          'Your device does not support biometric authentication.',
           'OK',
-          () => fallBackToDefaultAuth()
+          () => {}
         );
       }
 
@@ -54,9 +50,9 @@ export default function App() {
       if (!savedBiometrics) {
         return alertComponent(
           'Biometric record not found',
-          'Please login with your password',
+          'Please set up biometrics on your device.',
           'OK',
-          () => fallBackToDefaultAuth()
+          () => {}
         );
       }
 
@@ -67,21 +63,21 @@ export default function App() {
       });
 
       if (biometricAuth.success) {
-        // Retrieve the list of fingerprints from SecureStore
+        
         const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
 
-        // Check if the current fingerprint already exists
+        
         const existingFingerprint = fingerprints.find(fp => fp.id === biometricAuth.id);
 
         if (existingFingerprint) {
           alertComponent('Welcome', 'You are successfully logged in', 'OK', () => {});
           console.log("Fingerprint already exists. User ID:", existingFingerprint.userId);
         } else {
-          // Generate a unique user ID for the new fingerprint
+         
           const uniqueUserId = uuidv4();
           const newFingerprint = { id: biometricAuth.id, userId: uniqueUserId };
 
-          // Add the new fingerprint to the list and save it
+         
           fingerprints.push(newFingerprint);
           await SecureStore.setItemAsync('fingerprints', JSON.stringify(fingerprints));
 
@@ -131,16 +127,12 @@ export default function App() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.passwordButton}>
-          <Text style={styles.buttonText}>Login With Password</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity onPress={handleBiometricAuth}>
           <Entypo name='fingerprint' size={50} color='black' />
         </TouchableOpacity>
 
         <TouchableOpacity onPress={retrieveUserId}>
-          <Text style={styles.buttonText}>Retrieve Fingerprints</Text>
+          <Text style={styles.buttonText}>Scan Fingerprints</Text>
         </TouchableOpacity>
       </View>
 
@@ -169,15 +161,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  passwordButton: {
-    borderRadius: 8,
-    backgroundColor: 'black',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginRight: 10,
-  },
   buttonText: {
-    color: 'white',
+    color: 'black',
+    fontSize: 16,
+    marginTop: 10,
   },
 });
