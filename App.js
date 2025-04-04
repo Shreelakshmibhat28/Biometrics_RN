@@ -1,9 +1,10 @@
-
+import 'react-native-get-random-values'; 
 import { StatusBar } from 'expo-status-bar';
 import { Text, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
 import { Entypo } from "@expo/vector-icons";
 import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store'; // Import SecureStore
+import * as SecureStore from 'expo-secure-store'; 
+import { v4 as uuidv4 } from 'uuid'; 
 import React, { useState, useEffect } from 'react';
 
 export default function App() {
@@ -36,54 +37,65 @@ export default function App() {
     ]);
 
   const handleBiometricAuth = async () => {
-    const isBiometricAvailable = await LocalAuthentication.hasHardwareAsync();
+    try {
+      const isBiometricAvailable = await LocalAuthentication.hasHardwareAsync();
 
-    if (!isBiometricAvailable) {
-      return alertComponent(
-        'Please enter your password',
-        'Biometric auth not supported',
-        'OK',
-        () => fallBackToDefaultAuth()
-      );
-    }
+      if (!isBiometricAvailable) {
+        return alertComponent(
+          'Please enter your password',
+          'Biometric auth not supported',
+          'OK',
+          () => fallBackToDefaultAuth()
+        );
+      }
 
-    const savedBiometrics = await LocalAuthentication.isEnrolledAsync();
+      const savedBiometrics = await LocalAuthentication.isEnrolledAsync();
 
-    if (!savedBiometrics) {
-      return alertComponent(
-        'Biometric record not found',
-        'Please login with your password',
-        'OK',
-        () => fallBackToDefaultAuth()
-      );
-    }
+      if (!savedBiometrics) {
+        return alertComponent(
+          'Biometric record not found',
+          'Please login with your password',
+          'OK',
+          () => fallBackToDefaultAuth()
+        );
+      }
 
-    const biometricAuth = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Login with your biometrics",
-      cancelLabel: "Cancel",
-      disableDeviceFallback: true,
-    });
+      const biometricAuth = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Login with your biometrics",
+        cancelLabel: "Cancel",
+        disableDeviceFallback: true,
+      });
 
-    if (biometricAuth.success) {
-      // Store user data securely after successful authentication
-      const userToken = 'your_secure_token_here'; // Replace with actual token or user data
-      await SecureStore.setItemAsync('userToken', userToken);
-      
-      // Log the token to the console
-      console.log("User  Token:", userToken);
+      if (biometricAuth.success) {
+        // Generate a unique user ID
+        const uniqueUserId = uuidv4();
+        await SecureStore.setItemAsync('userId', uniqueUserId); // Store it securely
+        
+        // Log the unique user ID to the console
+        console.log(" User ID:", uniqueUserId);
 
-      TwoButtonAlert();
-    } else {
-      alertComponent('Authentication Failed', 'Please try again', 'OK', () => {});
+        TwoButtonAlert();
+      } else {
+        alertComponent('Authentication Failed', 'Please try again', 'OK', () => {});
+      }
+    } catch (error) {
+      console.error("Error during biometric authentication:", error);
+      alertComponent('Error', 'An error occurred during authentication', 'OK', () => {});
     }
   };
 
-  const retrieveUserData = async () => {
-    const userData = await SecureStore.getItemAsync('userToken');
-    if (userData) {
-      alertComponent('Retrieved Data', `Your token is: ${userData}`, 'OK', () => {});
-    } else {
-      alertComponent('No Data Found', 'No user data found in secure storage.', 'OK', () => {});
+  const retrieveUserId = async () => {
+    try {
+      const userId = await SecureStore.getItemAsync('userId');
+      if (userId) {
+        alertComponent('Retrieved User ID', `Your User ID is: ${userId}`, 'OK', () => {});
+        console.log("Retrieved User ID:", userId);
+      } else {
+        alertComponent('No Data Found', 'No user ID found in secure storage.', 'OK', () => {});
+      }
+    } catch (error) {
+      console.error("Error retrieving user ID:", error);
+      alertComponent('Error', 'An error occurred while retrieving user ID', 'OK', () => {});
     }
   };
 
@@ -114,8 +126,8 @@ export default function App() {
           <Entypo name='fingerprint' size={50} color='black' />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={retrieveUserData}>
-          <Text style={styles.buttonText}>Retrieve User Data</Text>
+        <TouchableOpacity onPress={retrieveUserId}>
+          <Text style={styles.buttonText}>Retrieve User ID</Text>
         </TouchableOpacity>
       </View>
 
