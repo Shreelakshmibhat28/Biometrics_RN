@@ -1,3 +1,4 @@
+
 import { StatusBar } from 'expo-status-bar';
 import { Text, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
 import { Entypo } from "@expo/vector-icons";
@@ -65,7 +66,12 @@ export default function App() {
 
     if (biometricAuth.success) {
       // Store user data securely after successful authentication
-      await SecureStore.setItemAsync('userToken', 'your_secure_token_here'); // Replace with actual token or user data
+      const userToken = 'your_secure_token_here'; // Replace with actual token or user data
+      await SecureStore.setItemAsync('userToken', userToken);
+      
+      // Log the token to the console
+      console.log("User  Token:", userToken);
+
       TwoButtonAlert();
     } else {
       alertComponent('Authentication Failed', 'Please try again', 'OK', () => {});
