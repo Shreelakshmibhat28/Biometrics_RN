@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import { loginScreenStyles } from '../styles/LoginScreenStyles'; 
 
 export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
@@ -40,35 +41,12 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login with Fingerprint</Text>
+    <View style={loginScreenStyles.container}>
+      <Text style={loginScreenStyles.title}>Login</Text>
+      <TouchableOpacity style={loginScreenStyles.button} onPress={handleLogin}>
+        <Text style={loginScreenStyles.buttonText}>Login with Fingerprint</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: 'black',
-    padding: 15,
-    borderRadius: 8,
-    width: '80%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-  },
-});
