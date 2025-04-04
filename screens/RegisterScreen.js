@@ -8,6 +8,11 @@ export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
 
   const handleRegister = async () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter a valid name.');
+      return;
+    }
+
     try {
       const biometricAuth = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Register your fingerprint',
@@ -16,12 +21,28 @@ export default function RegisterScreen({ navigation }) {
       });
 
       if (biometricAuth.success) {
-        const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
-        const uniqueUserId = uuidv4();
-        const newFingerprint = { id: biometricAuth.id, userId: uniqueUserId, name };
+        // Retrieve the existing list of users from SecureStore
+        const users = JSON.parse(await SecureStore.getItemAsync('users')) || [];
 
-        fingerprints.push(newFingerprint);
-        await SecureStore.setItemAsync('fingerprints', JSON.stringify(fingerprints));
+        // Generate a unique user ID and fingerprint ID
+        const uniqueUserId = uuidv4();
+        const fingerprintId = uuidv4(); // Generate a unique ID for the fingerprint
+
+        // Check if the name is already registered
+        const existingUser = users.find(user => user.name === name);
+        if (existingUser) {
+          Alert.alert('Error', 'This name is already registered. Please use a different name.');
+          return;
+        }
+
+        // Create a new user object
+        const newUser = { name, userId: uniqueUserId, fingerprintId };
+
+        // Add the new user to the list
+        users.push(newUser);
+
+        // Save the updated list back to SecureStore
+        await SecureStore.setItemAsync('users', JSON.stringify(users));
 
         Alert.alert('Success', 'Fingerprint registered successfully!', [
           { text: 'OK', onPress: () => navigation.navigate('Login') },
