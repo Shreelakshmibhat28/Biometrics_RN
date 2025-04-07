@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
+
 export default function WelcomeScreen({ route }) {
-  const { name, userId } = route.params; // Retrieve name and userId from route params
+  const { name, userId } = route.params;
 
   return (
     <View style={styles.container}>

@@ -13,10 +13,7 @@ export default function LoginScreen({ navigation }) {
       });
 
       if (biometricAuth.success) {
-        // Retrieve the list of users from SecureStore
         const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
-
-        // Check if the fingerprint matches any registered user
         const existingFingerprint = fingerprints.find(fp => fp.id === biometricAuth.id);
 
         if (existingFingerprint) {
@@ -25,8 +22,8 @@ export default function LoginScreen({ navigation }) {
               text: 'Proceed',
               onPress: () =>
                 navigation.navigate('Welcome', {
-                  name: existingFingerprint.name, // Pass the name
-                  userId: existingFingerprint.userId, // Pass the userId
+                  name: existingFingerprint.name,
+                  userId: existingFingerprint.userId,
                 }),
             },
           ]);
