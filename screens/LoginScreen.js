@@ -13,7 +13,10 @@ export default function LoginScreen({ navigation }) {
       });
 
       if (biometricAuth.success) {
+        // Retrieve stored fingerprints
         const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
+
+        // Find the fingerprint that matches
         const existingFingerprint = fingerprints.find(fp => fp.id === biometricAuth.id);
 
         if (existingFingerprint) {

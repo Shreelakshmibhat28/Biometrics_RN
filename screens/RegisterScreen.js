@@ -17,7 +17,7 @@ export default function RegisterScreen({ navigation }) {
 
       if (biometricAuth.success) {
         const fingerprints = JSON.parse(await SecureStore.getItemAsync('fingerprints')) || [];
-        const uniqueUserId = uuidv4();
+        const uniqueUserId = uuidv4(); // Generate a unique ID
         const newFingerprint = { id: biometricAuth.id, userId: uniqueUserId, name };
 
         fingerprints.push(newFingerprint);
